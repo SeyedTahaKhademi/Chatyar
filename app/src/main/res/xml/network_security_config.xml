@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- HTTPS is used by all cloud presets. Cleartext is enabled only so local
+         Ollama / LM Studio endpoints on a LAN can work. Never send API keys to
+         an untrusted HTTP endpoint. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
