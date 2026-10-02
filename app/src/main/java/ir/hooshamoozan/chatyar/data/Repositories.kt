@@ -9,14 +9,21 @@ class ProviderRepository(
     private val secretStore: SecretStore
 ) {
     val providers: Flow<List<ProviderEntity>> = dao.observeAll()
-    fun provider(id: String): Flow<ProviderEntity?> = dao.observeById(id)
-    suspend fun get(id: String): ProviderEntity? = dao.getById(id)
-    fun apiKey(id: String): String = secretStore.get(id)
+
+    fun provider(id: String): Flow<ProviderEntity?> =
+        dao.observeById(id)
+
+    suspend fun get(id: String): ProviderEntity? =
+        dao.getById(id)
+
+    fun apiKey(id: String): String =
+        secretStore.get(id)
 
     suspend fun save(draft: ProviderDraft): String {
         val now = System.currentTimeMillis()
         val id = draft.id ?: UUID.randomUUID().toString()
         val existing = dao.getById(id)
+
         dao.upsert(
             ProviderEntity(
                 id = id,
@@ -24,10 +31,16 @@ class ProviderRepository(
                 protocol = draft.protocol.name,
                 baseUrl = draft.baseUrl.trim().trimEnd('/'),
                 model = draft.model.trim(),
-                endpointPath = draft.endpointPath.trim().ifBlank { "/chat/completions" },
-                authHeader = draft.authHeader.trim().ifBlank { "Authorization" },
+                endpointPath = draft.endpointPath
+                    .trim()
+                    .ifBlank { "/chat/completions" },
+                authHeader = draft.authHeader
+                    .trim()
+                    .ifBlank { "Authorization" },
                 authPrefix = draft.authPrefix,
-                extraHeadersJson = draft.extraHeadersJson.trim().ifBlank { "{}" },
+                extraHeadersJson = draft.extraHeadersJson
+                    .trim()
+                    .ifBlank { "{}" },
                 temperature = draft.temperature.coerceIn(0.0, 2.0),
                 maxTokens = draft.maxTokens.coerceIn(1, 262144),
                 timeoutSeconds = draft.timeoutSeconds.coerceIn(5, 300),
@@ -36,7 +49,13 @@ class ProviderRepository(
                 updatedAt = now
             )
         )
-        if (draft.apiKey.isNotBlank()) secretStore.put(id, draft.apiKey)
+
+        // Empty key while editing means:
+        // keep the currently stored key.
+        if (draft.apiKey.isNotBlank()) {
+            secretStore.put(id, draft.apiKey.trim())
+        }
+
         return id
     }
 
@@ -67,15 +86,28 @@ class ChatRepository(
     private val chatDao: ChatDao,
     private val messageDao: MessageDao
 ) {
-    val chats: Flow<List<ChatEntity>> = chatDao.observeAll()
-    fun chat(id: String): Flow<ChatEntity?> = chatDao.observeById(id)
-    fun messages(chatId: String): Flow<List<MessageEntity>> = messageDao.observeForChat(chatId)
-    suspend fun getChat(id: String): ChatEntity? = chatDao.getById(id)
-    suspend fun getMessages(id: String): List<MessageEntity> = messageDao.getForChat(id)
+    val chats: Flow<List<ChatEntity>> =
+        chatDao.observeAll()
 
-    suspend fun createChat(providerId: String, systemPrompt: String = ""): String {
+    fun chat(id: String): Flow<ChatEntity?> =
+        chatDao.observeById(id)
+
+    fun messages(chatId: String): Flow<List<MessageEntity>> =
+        messageDao.observeForChat(chatId)
+
+    suspend fun getChat(id: String): ChatEntity? =
+        chatDao.getById(id)
+
+    suspend fun getMessages(id: String): List<MessageEntity> =
+        messageDao.getForChat(id)
+
+    suspend fun createChat(
+        providerId: String,
+        systemPrompt: String = ""
+    ): String {
         val id = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
+
         chatDao.upsert(
             ChatEntity(
                 id = id,
@@ -86,27 +118,69 @@ class ChatRepository(
                 updatedAt = now
             )
         )
+
         return id
     }
 
-    suspend fun addMessage(chatId: String, role: String, content: String, isError: Boolean = false): String {
+    suspend fun addMessage(
+        chatId: String,
+        role: String,
+        content: String,
+        isError: Boolean = false
+    ): String {
         val id = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
-        messageDao.upsert(MessageEntity(id, chatId, role, content, now, isError))
+
+        messageDao.upsert(
+            MessageEntity(
+                id = id,
+                chatId = chatId,
+                role = role,
+                content = content,
+                createdAt = now,
+                isError = isError
+            )
+        )
+
         chatDao.touch(chatId, now)
+
         if (role == "user") {
             val chat = chatDao.getById(chatId)
+
             if (chat != null && chat.title.isBlank()) {
-                val title = content.trim().replace("\n", " ").take(48)
-                chatDao.updateTitle(chatId, title, now)
+                val title = content
+                    .trim()
+                    .replace("\n", " ")
+                    .take(48)
+
+                chatDao.updateTitle(
+                    chatId,
+                    title,
+                    now
+                )
             }
         }
+
         return id
     }
 
-    suspend fun updateMessage(id: String, content: String, isError: Boolean = false) {
-        messageDao.updateContent(id, content, isError)
+    suspend fun updateMessage(
+        id: String,
+        content: String,
+        isError: Boolean = false
+    ) {
+        messageDao.updateContent(
+            id,
+            content,
+            isError
+        )
     }
 
-    suspend fun delete(chat: ChatEntity) = chatDao.delete(chat)
+    suspend fun deleteMessage(id: String) {
+        messageDao.deleteById(id)
+    }
+
+    suspend fun delete(chat: ChatEntity) {
+        chatDao.delete(chat)
+    }
 }
