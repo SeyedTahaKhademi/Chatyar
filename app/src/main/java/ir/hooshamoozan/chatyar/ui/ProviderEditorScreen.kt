@@ -256,41 +256,54 @@ fun ProviderEditorScreen(
 
                     Spacer(Modifier.height(12.dp))
                     OutlinedButton(
-                        onClick = {
-                            testing = true
-                            status = null
-                            statusIsError = false
-                            vm.testProvider(draft) { result ->
-                                testing = false
-       result.onSuccess { list ->
-    models = list
+OutlinedButton(
+    onClick = {
+        testing = true
+        status = null
+        statusIsError = false
 
-    status = if (list.isEmpty()) {
-        t.connectionOk
+        vm.testProvider(draft) { result ->
+            testing = false
+
+            result.onSuccess { list ->
+                models = list
+
+                status = if (list.isEmpty()) {
+                    t.connectionOk
+                } else {
+                    "${t.connectionOk} — ${list.size} ${t.modelsFound}"
+                }
+
+                statusIsError = false
+            }.onFailure {
+                status = it.message ?: t.errorGeneric
+                statusIsError = true
+            }
+        }
+    },
+    enabled = !testing && draft.baseUrl.isNotBlank(),
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(14.dp)
+) {
+    if (testing) {
+        CircularProgressIndicator(
+            strokeWidth = 2.dp,
+            modifier = Modifier.height(20.dp)
+        )
     } else {
-        "${t.connectionOk} — ${list.size} ${t.modelsFound}"
+        Icon(
+            Icons.Outlined.Science,
+            contentDescription = null
+        )
     }
 
-    statusIsError = false
+    Spacer(Modifier.padding(4.dp))
+
+    Text(
+        if (testing) t.testing
+        else t.testConnection
+    )
 }
-                                }.onFailure {
-                                    status = it.message ?: t.errorGeneric
-                                    statusIsError = true
-                                }
-                            }
-                        },
-                        enabled = !testing && draft.baseUrl.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        if (testing) {
-                            CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.height(20.dp))
-                        } else {
-                            Icon(Icons.Outlined.Science, contentDescription = null)
-                        }
-                        Spacer(Modifier.padding(4.dp))
-                        Text(if (testing) t.testing else t.testConnection)
-                    }
 
                     status?.let {
                         Spacer(Modifier.height(8.dp))
