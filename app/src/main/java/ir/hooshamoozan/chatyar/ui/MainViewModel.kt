@@ -713,16 +713,15 @@ class MainViewModel(
         }
     }
 
-    private fun isValidHeadersJson(
-        value: String
-    ): Boolean {
-        if (value.isBlank()) return true
+   private fun isValidHeadersJson(
+    value: String
+): Boolean {
+    if (value.isBlank()) return true
 
-        return runCatching {
-            Json.parseToJsonElement(value)
-        }.getOrNull()
-            is kotlinx.serialization.json.JsonObject
-    }
+    return runCatching {
+        Json.parseToJsonElement(value)
+    }.getOrNull() is kotlinx.serialization.json.JsonObject
+}
 
     private fun friendlyError(
         t: Throwable
