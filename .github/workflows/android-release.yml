@@ -29,9 +29,6 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Make Gradle executable
         run: chmod +x ./gradlew
 
@@ -71,10 +68,3 @@ jobs:
           name: Chatyar ${{ steps.meta.outputs.tag }}
           generate_release_notes: true
           files: ${{ steps.meta.outputs.apk }}
-          body: |
-            ## چتیار ${{ steps.meta.outputs.tag }}
-
-            فایل APK را از بخش Assets دانلود کنید.
-
-            حداقل نسخه اندروید:
-            Android 8.0 / API 26
