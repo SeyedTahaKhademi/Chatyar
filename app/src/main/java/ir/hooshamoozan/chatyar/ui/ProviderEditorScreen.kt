@@ -262,10 +262,17 @@ fun ProviderEditorScreen(
                             statusIsError = false
                             vm.testProvider(draft) { result ->
                                 testing = false
-                                result.onSuccess { list ->
-                                    models = list
-                                    status = if (list.isEmpty()) t.noModelList else "${t.connectionOk} — ${list.size} ${t.modelsFound}"
-                                    statusIsError = false
+       result.onSuccess { list ->
+    models = list
+
+    status = if (list.isEmpty()) {
+        t.connectionOk
+    } else {
+        "${t.connectionOk} — ${list.size} ${t.modelsFound}"
+    }
+
+    statusIsError = false
+}
                                 }.onFailure {
                                     status = it.message ?: t.errorGeneric
                                     statusIsError = true
