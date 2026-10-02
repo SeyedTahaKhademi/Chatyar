@@ -1,4 +1,4 @@
-name: Android CI/CD
+name: Android Release
 
 on:
   push:
@@ -7,59 +7,74 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. 0.1.0)'
-        required: false
+        description: 'Version, for example 0.1.0'
+        required: true
         default: '0.1.0'
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build & Release APK
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: '17'
-          distribution: 'temurin'
+          cache: gradle
 
-      - name: Setup Android SDK
+      - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Build Debug APK
-        run: chmod +x gradlew && ./gradlew assembleDebug
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Build APK
+        run: ./gradlew --no-daemon clean assembleDebug
 
       - name: Prepare APK
-        id: prep
+        id: meta
+        shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             TAG="v${{ inputs.version }}"
           else
             TAG="${{ github.ref_name }}"
           fi
+
           VERSION="${TAG#v}"
-          cp app/build/outputs/apk/debug/app-debug.apk "Chatyar-v${VERSION}.apk"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          APK_SOURCE="app/build/outputs/apk/debug/app-debug.apk"
+          APK_NAME="Chatyar-v${VERSION}.apk"
+
+          cp "$APK_SOURCE" "$APK_NAME"
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "apk=$APK_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chatyar-Android-${{ steps.meta.outputs.version }}
+          path: ${{ steps.meta.outputs.apk }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.prep.outputs.tag }}
-          name: Chatyar ${{ steps.prep.outputs.tag }}
-          files: Chatyar-*.apk
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: Chatyar ${{ steps.meta.outputs.tag }}
           generate_release_notes: true
+          files: ${{ steps.meta.outputs.apk }}
           body: |
-            ## چتیار ${{ steps.prep.outputs.tag }}
+            ## چتیار ${{ steps.meta.outputs.tag }}
 
-            ### نصب
-            فایل APK پیوست شده را دانلود و روی گوشی اندرویدی خود نصب کنید.
+            فایل APK را از بخش Assets دانلود کنید.
 
-            ### حداقل نیازمندی
-            - اندروید ۸.۰ (API 26) یا بالاتر
+            حداقل نسخه اندروید:
+            Android 8.0 / API 26
