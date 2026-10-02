@@ -5,7 +5,6 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -62,7 +61,14 @@ interface MessageDao {
     suspend fun upsert(message: MessageEntity)
 
     @Query("UPDATE messages SET content = :content, isError = :isError WHERE id = :id")
-    suspend fun updateContent(id: String, content: String, isError: Boolean = false)
+    suspend fun updateContent(
+        id: String,
+        content: String,
+        isError: Boolean = false
+    )
+
+    @Query("DELETE FROM messages WHERE id = :id")
+    suspend fun deleteById(id: String)
 
     @Query("DELETE FROM messages WHERE chatId = :chatId")
     suspend fun deleteForChat(chatId: String)
