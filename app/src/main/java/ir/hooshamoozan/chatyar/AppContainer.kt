@@ -11,13 +11,7 @@ import ir.hooshamoozan.chatyar.network.AiGatewayFactory
 
 class AppContainer(context: Context) {
     private val appContext = context.applicationContext
-
-    val database: AppDatabase = Room.databaseBuilder(
-        appContext,
-        AppDatabase::class.java,
-        "chatyar.db"
-    ).build()
-
+    val database: AppDatabase = Room.databaseBuilder(appContext, AppDatabase::class.java, "chatyar.db").build()
     val secretStore = SecretStore(appContext)
     val settingsRepository = SettingsRepository(appContext)
     val providerRepository = ProviderRepository(database.providerDao(), secretStore)

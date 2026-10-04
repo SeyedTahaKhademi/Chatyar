@@ -15,9 +15,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val app = application as ChatyarApplication
         setContent {
-            val vm: MainViewModel = viewModel(
-                factory = MainViewModelFactory(app.container)
-            )
+            val vm: MainViewModel = viewModel(factory = MainViewModelFactory(app.container))
             ChatyarApp(vm)
         }
     }

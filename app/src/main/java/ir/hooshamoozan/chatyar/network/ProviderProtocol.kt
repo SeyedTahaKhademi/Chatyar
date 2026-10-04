@@ -1,11 +1,6 @@
 package ir.hooshamoozan.chatyar.network
 
-enum class ProviderProtocol {
-    OPENAI_RESPONSES,
-    OPENAI_COMPATIBLE,
-    ANTHROPIC,
-    GEMINI
-}
+enum class ProviderProtocol { OPENAI_RESPONSES, OPENAI_COMPATIBLE, ANTHROPIC, GEMINI }
 
 data class ProviderPreset(
     val name: String,

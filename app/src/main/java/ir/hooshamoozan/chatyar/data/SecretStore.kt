@@ -18,20 +18,11 @@ class SecretStore(context: Context) {
         val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         val existing = keyStore.getKey(keyAlias, null) as? SecretKey
         if (existing != null) return existing
-
-        val keyGenerator = KeyGenerator.getInstance(
-            KeyProperties.KEY_ALGORITHM_AES,
-            "AndroidKeyStore"
-        )
-        val spec = KeyGenParameterSpec.Builder(
-            keyAlias,
-            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-        )
+        val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        keyGenerator.init(KeyGenParameterSpec.Builder(keyAlias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-            .setRandomizedEncryptionRequired(true)
-            .build()
-        keyGenerator.init(spec)
+            .setRandomizedEncryptionRequired(true).build())
         return keyGenerator.generateKey()
     }
 
@@ -47,14 +38,11 @@ class SecretStore(context: Context) {
         return runCatching {
             val payload = Base64.decode(encoded, Base64.NO_WRAP)
             val iv = payload.copyOfRange(0, 12)
-            val cipherText = payload.copyOfRange(12, payload.size)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
             cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, iv))
-            cipher.doFinal(cipherText).toString(Charsets.UTF_8)
+            cipher.doFinal(payload.copyOfRange(12, payload.size)).toString(Charsets.UTF_8)
         }.getOrDefault("")
     }
 
-    fun remove(providerId: String) {
-        prefs.edit().remove(providerId).apply()
-    }
+    fun remove(providerId: String) { prefs.edit().remove(providerId).apply() }
 }

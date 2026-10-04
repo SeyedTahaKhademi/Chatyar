@@ -26,14 +26,7 @@ data class ProviderEntity(
 
 @Entity(
     tableName = "chats",
-    foreignKeys = [
-        ForeignKey(
-            entity = ProviderEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["providerId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
+    foreignKeys = [ForeignKey(entity = ProviderEntity::class, parentColumns = ["id"], childColumns = ["providerId"], onDelete = ForeignKey.CASCADE)],
     indices = [Index("providerId")]
 )
 data class ChatEntity(
@@ -47,14 +40,7 @@ data class ChatEntity(
 
 @Entity(
     tableName = "messages",
-    foreignKeys = [
-        ForeignKey(
-            entity = ChatEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["chatId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
+    foreignKeys = [ForeignKey(entity = ChatEntity::class, parentColumns = ["id"], childColumns = ["chatId"], onDelete = ForeignKey.CASCADE)],
     indices = [Index("chatId")]
 )
 data class MessageEntity(
