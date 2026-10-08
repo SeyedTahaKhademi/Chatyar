@@ -104,6 +104,15 @@ class ChatyarVpnService : VpnService() {
                         if (!stopping) VpnStatus.setError("تونل متوقف شد")
                     }
                     override fun serviceReload() = Unit
+                    // Required by the libbox 1.14.1 CommandServerHandler contract.
+                    // Chatyar's app-only VPN does not expose an Android system proxy.
+                    override fun getSystemProxyStatus(): SystemProxyStatus? = null
+                    override fun setSystemProxyEnabled(isEnabled: Boolean) = Unit
+                    // Never deliberately crash production builds or log native debug content.
+                    override fun triggerNativeCrash() = Unit
+                    override fun writeDebugMessage(message: String?) = Unit
+                    // No SSH agent is offered by Chatyar. -1 means unavailable.
+                    override fun connectSSHAgent(): Int = -1
                 }, PlatformBridge())
                 synchronized(lock) { server = s }
                 s.start()

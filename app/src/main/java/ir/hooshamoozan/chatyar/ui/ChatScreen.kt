@@ -1,5 +1,6 @@
 package ir.hooshamoozan.chatyar.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -287,6 +288,7 @@ private fun AssistantMessage(message: MessageEntity) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChatComposer(
     input: String,
