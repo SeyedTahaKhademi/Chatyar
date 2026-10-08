@@ -62,10 +62,21 @@ android {
         applicationId = "ir.hooshamoozan.chatyar"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.3.1-beta"
+        versionCode = 5
+        versionName = "0.3.2-beta"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+    }
+
+    // Split large native libbox binaries by CPU architecture.
+    // Each device downloads only the JNI code matching its CPU.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = false
+        }
     }
 
     buildTypes {
@@ -81,7 +92,12 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true; buildConfig = true }
-    packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    // Compress .so files in APK for smaller GitHub downloads.
+    // Android extracts them at install time (requires more installed disk space).
+    packaging {
+        jniLibs { useLegacyPackaging = true }
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+    }
 }
 
 dependencies {

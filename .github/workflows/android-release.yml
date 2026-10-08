@@ -8,7 +8,7 @@ on:
       version:
         description: 'Version, for example 0.2.0'
         required: true
-        default: '0.2.0'
+        default: '0.3.2-beta'
 
 permissions:
   contents: write
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -26,24 +26,42 @@ jobs:
       - run: chmod +x ./gradlew
       - name: Build APK
         run: ./gradlew --no-daemon clean assembleDebug
-      - name: Prepare APK
+      - name: Prepare ABI-specific APKs
         id: meta
         shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then TAG="v${{ inputs.version }}"; else TAG="${{ github.ref_name }}"; fi
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG="v${{ inputs.version }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
           VERSION="${TAG#v}"
-          APK_NAME="Chatyar-v${VERSION}.apk"
-          cp app/build/outputs/apk/debug/app-debug.apk "$APK_NAME"
+          APK_DIR="app/build/outputs/apk/debug"
+          test -d "$APK_DIR"
+          # No universal or x86 APK: ship two significantly smaller per-CPU packages.
+          for ABI in arm64-v8a armeabi-v7a; do
+            FILE="$APK_DIR/app-$ABI-debug.apk"
+            if [[ ! -f "$FILE" ]]; then
+              echo "ERROR: Missing ABI APK: $FILE" >&2
+              find "$APK_DIR" -maxdepth 1 -type f -name '*.apk' -print || true
+              exit 1
+            fi
+            OUT="Chatyar-v${VERSION}-${ABI}.apk"
+            cp "$FILE" "$OUT"
+            echo "$OUT: $(du -h "$OUT" | cut -f1)"
+          done
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "apk=$APK_NAME" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
           name: Chatyar-Android-${{ steps.meta.outputs.version }}
-          path: ${{ steps.meta.outputs.apk }}
+          path: Chatyar-v${{ steps.meta.outputs.version }}-*.apk
+          if-no-files-found: error
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: Chatyar ${{ steps.meta.outputs.tag }}
+          prerelease: ${{ contains(steps.meta.outputs.tag, 'beta') }}
           generate_release_notes: true
-          files: ${{ steps.meta.outputs.apk }}
+          files: Chatyar-v${{ steps.meta.outputs.version }}-*.apk
