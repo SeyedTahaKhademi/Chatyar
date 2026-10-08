@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
 import java.io.IOException
 import java.net.URI
+import android.net.Uri
+import java.io.File
 import java.util.ArrayDeque
 
 class MainViewModel(private val container: AppContainer) : ViewModel() {
@@ -33,6 +35,73 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     fun setTheme(mode: ThemeMode) = viewModelScope.launch { container.settingsRepository.setTheme(mode) }
     fun setLanguage(language: AppLanguage) = viewModelScope.launch { container.settingsRepository.setLanguage(language) }
     fun clearAllChats() = viewModelScope.launch { generationJobs.values.forEach { it.cancel() }; generationJobs.clear(); container.chatRepository.clearAllChats() }
+
+    fun recentImages(): List<File> = container.imageFileStore.recent()
+
+    fun generateImage(
+        providerId: String,
+        prompt: String,
+        imageModel: String,
+        size: String,
+        endpoint: String,
+        onResult: (Result<File>) -> Unit
+    ) = viewModelScope.launch {
+        try {
+            val provider = container.providerRepository.get(providerId)
+                ?: throw IllegalArgumentException("Provider not found")
+            val apiKey = container.providerRepository.apiKey(providerId)
+            val type = runCatching { ProviderProtocol.valueOf(provider.protocol) }
+                .getOrDefault(ProviderProtocol.OPENAI_COMPATIBLE)
+            if (requiresApiKey(ProviderDraft(protocol = type, baseUrl = provider.baseUrl, apiKey = apiKey)) && apiKey.isBlank()) {
+                throw IllegalArgumentException("API key is required for this image provider")
+            }
+            val bytes = container.imageGateway.generate(provider, apiKey, prompt, imageModel, size, endpoint)
+            val file = container.imageFileStore.save(bytes)
+            onResult(Result.success(file))
+        } catch (e: CancellationException) { throw e }
+        catch (e: Exception) { onResult(Result.failure(e)) }
+    }
+
+    fun exportGeneratedImage(file: File, uri: Uri, onResult: (Result<Unit>) -> Unit) = viewModelScope.launch {
+        try {
+            container.imageFileStore.export(file, uri)
+            onResult(Result.success(Unit))
+        } catch (e: CancellationException) { throw e }
+        catch (e: Exception) { onResult(Result.failure(e)) }
+    }
+
+    fun vpnProfiles(): List<VpnProfile> = container.vpnProfiles.profiles()
+    fun vpnConfig(id: String): String = container.vpnProfiles.config(id)
+    fun addVpnProfile(name: String, uri: String): VpnProfile = container.vpnProfiles.save(name, uri)
+    fun importVpnProfiles(name: String, config: String): List<VpnProfile> = container.vpnProfiles.saveMany(name, config)
+    fun deleteVpnProfile(id: String) = container.vpnProfiles.remove(id)
+
+    fun testSavedProvider(id: String, onResult: (Result<List<String>>) -> Unit) = viewModelScope.launch {
+        val provider = container.providerRepository.get(id)
+        if (provider == null) {
+            onResult(Result.failure(IllegalArgumentException("Provider not found")))
+            return@launch
+        }
+        val protocol = runCatching { ProviderProtocol.valueOf(provider.protocol) }
+            .getOrDefault(ProviderProtocol.OPENAI_COMPATIBLE)
+        val draft = ProviderDraft(
+            id = provider.id,
+            name = provider.name,
+            protocol = protocol,
+            baseUrl = provider.baseUrl,
+            apiKey = container.providerRepository.apiKey(id),
+            model = provider.model,
+            endpointPath = provider.endpointPath,
+            authHeader = provider.authHeader,
+            authPrefix = provider.authPrefix,
+            extraHeadersJson = provider.extraHeadersJson,
+            temperature = provider.temperature,
+            maxTokens = provider.maxTokens,
+            timeoutSeconds = provider.timeoutSeconds,
+            stream = provider.stream
+        )
+        testProvider(draft, onResult)
+    }
 
     fun loadProviderDraft(id: String, onLoaded: (ProviderDraft?) -> Unit) = viewModelScope.launch {
         val p = container.providerRepository.get(id)

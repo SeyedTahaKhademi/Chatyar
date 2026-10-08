@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -49,7 +51,7 @@ import ir.hooshamoozan.chatyar.data.ThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
+fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit, onVpnSettings: () -> Unit) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val t = LocalAppText.current
     val uriHandler = LocalUriHandler.current
@@ -92,6 +94,23 @@ fun SettingsScreen(vm: MainViewModel, onBack: () -> Unit) {
                 Text(t.apiKeySecure, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(8.dp))
                 Text(t.cleartextWarning, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+
+            Spacer(Modifier.height(26.dp))
+            SectionLabel("NETWORK")
+            Card(
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onVpnSettings),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Security, null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("VPN & Connection", fontWeight = FontWeight.Bold)
+                        Text("VLESS / Shadowsocks import, Android VPN status, real API test", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
 
             Spacer(Modifier.height(26.dp))

@@ -1,0 +1,24 @@
+# VPN QA Checklist — verify before public release
+
+- [ ] `./gradlew clean assembleDebug` with JDK 17, Android SDK 35, internet access
+- [ ] Verify AAR SHA-256; record the final provenance and libbox version
+- [ ] Install on Android 8, 12, 13, 14 and 15 devices/emulators
+- [ ] Open Settings -> VPN, paste valid VLESS/REALITY (WS, gRPC) and import
+- [ ] Repeat with VMess base64 JSON, Trojan, Shadowsocks, Hysteria2, TUIC, AnyTLS
+- [ ] Import multi-line links, Base64 subscription, Clash YAML and sing-box outbound JSON
+- [ ] Confirm invalid secrets / malformed URIs show an error without crashing
+- [ ] Tap Connect: Android's real VpnService consent dialog must appear
+- [ ] Deny permission -> no foreground VPN service and no Connected state
+- [ ] Approve permission -> notification, Android VPN icon and active traffic
+- [ ] Check `https://api.ipify.org` on the phone from Chatyar network; compare to direct IP
+- [ ] Test a saved AI Provider through the tunnel and inspect success/error
+- [ ] Verify 403 errors are not misreported as automatic geoblock success
+- [ ] Test images API and streamed chat through the VPN
+- [ ] Ensure other installed apps do NOT enter the Chatyar-only tunnel
+- [ ] Stop via UI and notification; verify network resumes normal routes
+- [ ] Revoke VPN permission in Android settings; ensure service stops cleanly
+- [ ] Switch Wi-Fi <-> mobile while connected; check underlying network protection
+- [ ] Test Android battery optimizations, foreground requirements, notification permission denial
+- [ ] Disconnect/connect another profile without leaking file descriptors
+- [ ] Confirm config secrets never appear in logcat or exception notifications
+- [ ] Confirm GPLv3 notices + corresponding source compliance before shipping
