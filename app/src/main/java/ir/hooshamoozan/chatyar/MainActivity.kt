@@ -13,6 +13,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        // Keep Compose insets in control of IME and navigation bars on Android 8–15.
+        window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         val app = application as ChatyarApplication
         setContent {
             val vm: MainViewModel = viewModel(factory = MainViewModelFactory(app.container))

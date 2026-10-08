@@ -14,6 +14,7 @@ data class ProviderPreset(
 
 val ProviderPresets = listOf(
     ProviderPreset("OpenAI", ProviderProtocol.OPENAI_RESPONSES, "https://api.openai.com/v1", "gpt-5.6", endpointPath = "/responses"),
+    ProviderPreset("OpenAI Images (gpt-image-1)", ProviderProtocol.OPENAI_COMPATIBLE, "https://api.openai.com/v1", "gpt-image-1"),
     ProviderPreset("Claude / Anthropic", ProviderProtocol.ANTHROPIC, "https://api.anthropic.com"),
     ProviderPreset("Gemini", ProviderProtocol.GEMINI, "https://generativelanguage.googleapis.com", "gemini-3.5-flash"),
     ProviderPreset("OpenRouter", ProviderProtocol.OPENAI_COMPATIBLE, "https://openrouter.ai/api/v1"),

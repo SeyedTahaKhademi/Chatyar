@@ -65,8 +65,15 @@ private fun MainNavigation(vm: MainViewModel, hasProviders: Boolean) {
         composable("settings") {
             SettingsScreen(
                 vm = vm,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onVpnSettings = { navController.navigate("vpn") }
             )
+        }
+        composable("vpn") {
+            VpnConnectionScreen(vm = vm, onBack = { navController.popBackStack() })
+        }
+        composable("image/{providerId}", arguments = listOf(navArgument("providerId") { type = NavType.StringType })) { entry ->
+            ImageGenerationScreen(vm, entry.arguments?.getString("providerId"), onBack = { navController.popBackStack() })
         }
         composable("provider/new") {
             ProviderEditorScreen(
@@ -94,7 +101,10 @@ private fun MainNavigation(vm: MainViewModel, hasProviders: Boolean) {
                 chatId = entry.arguments?.getString("chatId").orEmpty(),
                 onBack = { navController.popBackStack() },
                 onProviders = { navController.navigate("providers") },
-                onSettings = { navController.navigate("settings") }
+                onSettings = { navController.navigate("settings") },
+                onGenerateImage = { providerId ->
+                    navController.navigate("image/${providerId ?: "default"}")
+                }
             )
         }
     }

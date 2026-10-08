@@ -10,7 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,6 +32,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.DropdownMenu
@@ -52,6 +59,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,7 +83,8 @@ fun ChatScreen(
     chatId: String,
     onBack: () -> Unit,
     onProviders: () -> Unit,
-    onSettings: () -> Unit
+    onSettings: () -> Unit,
+    onGenerateImage: (String?) -> Unit
 ) {
     val chat by vm.chat(chatId).collectAsStateWithLifecycle(initialValue = null)
     val messages by vm.messages(chatId).collectAsStateWithLifecycle(initialValue = emptyList())
@@ -79,11 +97,14 @@ fun ChatScreen(
     var input by remember { mutableStateOf("") }
     var menu by remember { mutableStateOf(false) }
 
-    LaunchedEffect(messages.size, messages.lastOrNull()?.content?.length) {
+    val imeHeight = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(messages.size, messages.lastOrNull()?.content?.length, imeHeight) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
     }
 
     Scaffold(
+        modifier = Modifier.fillMaxSize().imePadding(),
+        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
@@ -115,6 +136,9 @@ fun ChatScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { onGenerateImage(provider?.id) }) {
+                        Icon(Icons.Outlined.Image, contentDescription = "Generate image", tint = MaterialTheme.colorScheme.primary)
+                    }
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, null) }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -272,11 +296,13 @@ private fun ChatComposer(
     onStop: () -> Unit
 ) {
     val t = LocalAppText.current
+    val bringIntoView = remember { BringIntoViewRequester() }
+    val scope = rememberCoroutineScope()
     Column(
         Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
-            .imePadding()
+            .navigationBarsPadding()
     ) {
         Surface(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
@@ -290,7 +316,13 @@ private fun ChatComposer(
                 OutlinedTextField(
                     value = input,
                     onValueChange = onInput,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f)
+                        .bringIntoViewRequester(bringIntoView)
+                        .onFocusChanged { state ->
+                            if (state.isFocused) scope.launch { delay(220); bringIntoView.bringIntoView() }
+                        },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(onSend = { if (input.isNotBlank() && !isGenerating) onSend() }),
                     placeholder = { Text(t.messageHint, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .7f)) },
                     maxLines = 6,
                     colors = OutlinedTextFieldDefaults.colors(

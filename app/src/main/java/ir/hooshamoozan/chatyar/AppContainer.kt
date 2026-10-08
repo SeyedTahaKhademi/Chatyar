@@ -6,6 +6,9 @@ import ir.hooshamoozan.chatyar.data.AppDatabase
 import ir.hooshamoozan.chatyar.data.ChatRepository
 import ir.hooshamoozan.chatyar.data.ProviderRepository
 import ir.hooshamoozan.chatyar.data.SecretStore
+import ir.hooshamoozan.chatyar.data.VpnProfileStore
+import ir.hooshamoozan.chatyar.media.ImageFileStore
+import ir.hooshamoozan.chatyar.network.ImageGenerationGateway
 import ir.hooshamoozan.chatyar.data.SettingsRepository
 import ir.hooshamoozan.chatyar.network.AiGatewayFactory
 
@@ -17,4 +20,7 @@ class AppContainer(context: Context) {
     val providerRepository = ProviderRepository(database.providerDao(), secretStore)
     val chatRepository = ChatRepository(database.chatDao(), database.messageDao())
     val gatewayFactory = AiGatewayFactory()
+    val imageGateway = ImageGenerationGateway()
+    val imageFileStore = ImageFileStore(appContext)
+    val vpnProfiles = VpnProfileStore(appContext, secretStore)
 }

@@ -1,6 +1,18 @@
-# Chatyar v0.2 — چتیار
+# Chatyar v0.3.0-beta — چتیار
 
-نسخه بازطراحی‌شده چتیار؛ کلاینت اندرویدی BYOK برای اتصال مستقیم به سرویس‌های هوش مصنوعی.
+نسخه آزمایشی چتیار با اصلاحات کیبورد چت، Image Studio واقعی برای APIهای OpenAI-compatible و اتصال به VPN فعال اندروید از طریق کلاینت مستقل.
+
+> **وضعیت:** Beta / source package. APK کامپایل و روی دستگاه واقعی تأیید نشده است. جزئیات و محدودیت‌ها: [UPDATE_NOTES_FA.md](UPDATE_NOTES_FA.md).
+
+## قابلیت‌های افزوده در 0.3.0-beta
+
+- رفع مشکل پنهان شدن Composer پشت کیبورد با `adjustResize`، IME insets و bring-into-view.
+- Image Studio: اتصال مستقیم به `/images/generations`، دریافت Base64 یا URL، تصاویر قبلی و خروجی PNG با file picker.
+- Preset «OpenAI Images (gpt-image-1)» برای Provider تصویری مستقل.
+- Settings → VPN & Network: ذخیره امن `vless://` و `ss://`، انتقال به کلاینت VPN جداگانه، تشخیص VPN فعال اندروید و تست عملی API.
+- **VPN داخلی و اتصال خودکار VLESS/Shadowsocks وجود ندارد.** این مورد نیازمند هسته تونل و Android VpnService است.
+
+
 
 ## مهم‌ترین تغییرات این بسته
 
@@ -70,3 +82,11 @@ Test Connection دیگر از timeout طولانی تنظیمات چت استف�
 ## Package
 
 `ir.hooshamoozan.chatyar`
+
+---
+
+## Experimental internal VPN — v0.3.1-beta
+
+Source includes a `VpnService` + embedded sing-box/libbox integration (the native AAR is downloaded with SHA-256 verification at build time). It requests Android VPN consent and can route **Chatyar app traffic only** through imported endpoints such as VLESS, VMess, Trojan, Shadowsocks, Hysteria2, TUIC, AnyTLS, SOCKS/HTTP, and selected sing-box JSON/Clash YAML.
+
+This is an **experimental source build, not a tested Android release**. See [`INTERNAL_VPN_README_FA.md`](INTERNAL_VPN_README_FA.md), [`VPN_QA_CHECKLIST.md`](VPN_QA_CHECKLIST.md) and GPLv3 notices under `third_party/`. The GPLv3 requirements of libbox must be resolved before redistributing an APK containing it.
